@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Asystent dla dzieci — demo</title>
+  <style>
+    :root{
+      --bg:#dff3ff; /* jasnoniebieskie tło */
+      --accent:#ffb74d; /* przyjazny pomarańcz */
+      --cta:#ffcc66;
+      --card:#ffffff;
+      --text:#102a43;
+      --muted:#5b6b73;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    html,body{height:100%;}
+    body{
+      margin:0; background:var(--bg); color:var(--text); display:flex; align-items:center; justify-content:center; padding:20px;
+    }
+    .app{
+      width:100%; max-width:980px; background:linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.95)); box-shadow:0 10px 30px rgba(16,42,67,0.12); border-radius:18px; padding:22px; display:grid; grid-template-columns:360px 1fr; gap:20px; align-items:start;
+    }
+    header{grid-column:1/-1; display:flex; align-items:center; gap:14px}
+    h1{font-size:20px; margin:0}
+    .mascot-wrap{background:linear-gradient(180deg,#fff,#f7fcff); border-radius:14px; padding:14px; display:flex; flex-direction:column; align-items:center; gap:10px}
+    .mascot-placeholder{width:260px;height:260px; display:flex; align-items:center; justify-content:center; border-radius:12px; position:relative; overflow:hidden}
+    .mascot-placeholder img{width:100%; height:100%; object-fit:cover}
+    .maskotka-svg{width:180px;height:180px}
+
+    /* usta animowane */
+    .usta{transition:transform 120ms ease; transform-origin:center;}
+    .usta.mow{transform:scaleY(1.4)}
+
+    .controls{display:flex; gap:8px; margin-top:6px}
+    button{background:var(--cta); border:0; padding:12px 14px; border-radius:12px; font-weight:700; cursor:pointer}
+    button.secondary{background:#fff; box-shadow:0 6px 14px rgba(16,42,67,0.08); color:var(--muted)}
+    .status{font-size:13px; color:var(--muted)}
+
+    .panel{padding:16px; background:var(--card); border-radius:12px; box-shadow:0 6px 18px rgba(16,42,67,0.04)}
+    .transkrypcja{min-height:56px; font-size:18px; display:flex; align-items:center}
+    .odpowiedz{margin-top:12px; font-size:18px; font-weight:600}
+
+    .examples{margin-top:10px; display:flex; gap:8px; flex-wrap:wrap}
+    .chip{background:#f1f7fb; padding:8px 10px; border-radius:999px; font-size:13px; cursor:pointer}
+
+    footer{grid-column:1/-1; margin-top:8px; text-align:center; font-size:13px; color:var(--muted)}
+
+    @media (max-width:880px){.app{grid-template-columns:1fr;}}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><rect rx='10' width='48' height='48' fill='%23ffcc66'/><text x='50%' y='58%' font-size='20' text-anchor='middle' fill='%23102243' font-family='Verdana'>A</text></svg>" alt="logo" style="width:48px;height:48px;border-radius:10px;" />
+      <div>
+        <h1>Asystent Przyjazny Miś — demo</h1>
+        <div style="font-size:13px;color:var(--muted)">Zadawaj pytania głosowo — odpowiedzi będą krótkie i czytane na głos.</div>
+      </div>
+    </header>
+
+    <aside class="mascot-wrap panel">
+      <div class="mascot-placeholder" aria-hidden="true">
+        <!-- Tutaj wstaw obrazek pluszowego misia lub animację Lottie -->
+        <img id="mascotImg" src="mascot-placeholder.png" alt="Pluszowy miś" />
+
+        <!-- Alternatywna prosta SVG maskotka (jeśli nie masz grafiki): -->
+        <svg class="maskotka-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="position:absolute; left:calc(50% - 90px); top:calc(50% - 90px);">
+          <g transform="translate(100,100)">
+            <circle cx="0" cy="-8" r="60" fill="#ffead0" stroke="#f0b678" stroke-width="3" />
+            <circle cx="-30" cy="-40" r="16" fill="#fff" />
+            <circle cx="30" cy="-40" r="16" fill="#fff" />
+            <circle cx="-30" cy="-40" r="6" fill="#2b2b2b" />
+            <circle cx="30" cy="-40" r="6" fill="#2b2b2b" />
+            <!-- usta (animowane) -->
+            <ellipse id="usta" class="usta" cx="0" cy="25" rx="22" ry="10" fill="#c24a4a" />
+          </g>
+        </svg>
+      </div>
+
+      <div style="width:100%; text-align:center">
+        <div class="controls">
+          <button id="recBtn">🎤 Nagraj pytanie</button>
+          <button id="uploadBtn" class="secondary">📁 Wyślij MP3</button>
+        </div>
+        <div class="status" id="status">Brak nagrania</div>
+      </div>
+
+      <div style="margin-top:12px; width:100%">
+        <small style="color:var(--muted)">Przykładowe pytania:</small>
+        <div class="examples">
+          <div class="chip">Jakiego koloru jest niebo?</div>
+          <div class="chip">Opowiedz o kotkach</div>
+          <div class="chip">Jaki dźwięk robi koń?</div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="panel">
+      <div>
+        <label style="font-size:13px;color:var(--muted)">Transkrypcja:</label>
+        <div class="transkrypcja" id="transkrypcja">-</div>
+
+        <div class="odpowiedz" id="odpowiedz">Tu pojawi się odpowiedź.</div>
+
+        <div style="margin-top:12px; display:flex; gap:8px; align-items:center">
+          <button id="playAnswer" class="secondary">▶️ Odtwórz odpowiedź</button>
+          <button id="stopAnswer" class="secondary">⏹ Stop</button>
+        </div>
+      </div>
+
+      <div style="margin-top:14px; font-size:13px; color:var(--muted)">Notatka: Ten frontend wysyła nagranie do endpointu <code>/api/ask</code> (POST, form-data, pole "audio"). Backend powinien zwrócić JSON: <code>{ transcript, answer }</code>. Jeśli chcesz, mogę przygotować szkielet backendu.</div>
+    </main>
+
+    <footer>Opracowane: Asystent — demo • Nagrania są lokalne dopóki nie wyślesz do serwera.</footer>
+  </div>
+
+  <script>
+    // Zmiennne w języku polskim zgodnie z preferencjami
+    const recBtn = document.getElementById('recBtn');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const statusEl = document.getElementById('status');
+    const transkrypcjaEl = document.getElementById('transkrypcja');
+    const odpowiedzEl = document.getElementById('odpowiedz');
+    const ustaEl = document.getElementById('usta');
+    const playAnswerBtn = document.getElementById('playAnswer');
+    const stopAnswerBtn = document.getElementById('stopAnswer');
+
+    let mediaRecorder;
+    let nagranieChunks = [];
+    let nagraneBlob = null;
+
+    // Prosta funkcja do animacji ust podczas mówienia
+    function zaczynajMowic(){ ustaEl.classList.add('mow'); }
+    function konczMowic(){ ustaEl.classList.remove('mow'); }
+
+    // Inicjalizacja nagrywania
+    async function startNagrywania(){
+      try{
+        const stream = await navigator.mediaDevices.getUserMedia({ audio:true });
+        mediaRecorder = new MediaRecorder(stream);
+        nagranieChunks = [];
+        mediaRecorder.ondataavailable = e => nagranieChunks.push(e.data);
+        mediaRecorder.onstop = async () => {
+          nagraneBlob = new Blob(nagranieChunks, { type: 'audio/webm' });
+          statusEl.textContent = 'Nagranie gotowe (webm). Możesz je wysłać.';
+          // opcjonalnie pokaż lokalny podgląd
+          const url = URL.createObjectURL(nagraneBlob);
+          transkrypcjaEl.textContent = '--- (przetworz w backendzie) ---';
+
+          // automatyczne wysłanie do /api/ask (jeśli chcesz)
+          // await sendToServer(nagraneBlob);
+        };
+        mediaRecorder.start();
+        statusEl.textContent = 'Nagrywanie...';
+        recBtn.textContent = '⏹ Zatrzymaj';
+      }catch(err){
+        console.error(err); statusEl.textContent = 'Błąd: brak dostępu do mikrofonu';
+      }
+    }
+
+    function zatrzymajNagrywanie(){
+      if(mediaRecorder && mediaRecorder.state !== 'inactive'){
+        mediaRecorder.stop();
+        recBtn.textContent = '🎤 Nagraj pytanie';
+      }
+    }
+
+    recBtn.addEventListener('click', ()=>{
+      if(!mediaRecorder || mediaRecorder.state === 'inactive') startNagrywania();
+      else zatrzymajNagrywanie();
+    });
+
+    // Upload (plik mp3 wysyłany przez input typu file)
+    uploadBtn.addEventListener('click', ()=>{
+      const inp = document.createElement('input');
+      inp.type='file'; inp.accept='audio/*';
+      inp.onchange = async ()=>{
+        const f = inp.files[0];
+        if(!f) return;
+        statusEl.textContent = 'Plik gotowy do wysłania: ' + f.name;
+        await sendToServer(f);
+      };
+      inp.click();
+    });
+
+    // Wysyłanie nagrania do API
+    async function sendToServer(audioBlob){
+      statusEl.textContent = 'Wysyłanie do serwera...';
+      try{
+        const fd = new FormData();
+        fd.append('audio', audioBlob, 'question.webm');
+        // tu endpoint backendu - musisz go zaimplementować
+        const resp = await fetch('/api/ask', { method:'POST', body:fd });
+        if(!resp.ok) throw new Error('Błąd serwera');
+        const data = await resp.json();
+        transkrypcjaEl.textContent = data.transcript || '-';
+        odpowiedzEl.textContent = data.answer || 'Brak odpowiedzi';
+        statusEl.textContent = 'Odpowiedź otrzymana.';
+        // Odtwórz odpowiedź przez TTS przeglądarki
+        playAnswer(data.answer);
+      }catch(err){
+        console.error(err); statusEl.textContent = 'Błąd wysyłania (zobacz konsolę)';
+      }
+    }
+
+    // Web Speech API — czytanie odpowiedzi
+    let obecneUtworzenie = null;
+    function playAnswer(text){
+      if(!text) return;
+      window.speechSynthesis.cancel();
+      const msg = new SpeechSynthesisUtterance(text);
+      msg.lang = 'pl-PL';
+      msg.onstart = ()=>{ zaczynajMowic(); }
+      msg.onend = ()=>{ konczMowic(); }
+      obecneUtworzenie = msg;
+      window.speechSynthesis.speak(msg);
+    }
+    playAnswerBtn.addEventListener('click', ()=> playAnswer(odpowiedzEl.textContent));
+    stopAnswerBtn.addEventListener('click', ()=>{ window.speechSynthesis.cancel(); konczMowic(); });
+
+    // Przykladowe chipy
+    document.querySelectorAll('.chip').forEach(el=>el.addEventListener('click', ()=>{
+      const q = el.textContent;
+      transkrypcjaEl.textContent = q;
+      // zasymuluj odpowiedz dla demo:
+      const demoAnswer = {
+        'Jakiego koloru jest niebo?':'Niebo jest zwykle niebieskie.',
+        'Opowiedz o kotkach':'Kotki są małe i lubią się bawić.',
+        'Jaki dźwięk robi koń?':'Koń mówi: iha iha.'
+      }[q] || 'Nie wiem tego, spróbuj innego pytania.';
+      odpowiedzEl.textContent = demoAnswer;
+      playAnswer(demoAnswer);
+    }));
+
+    // Jeśli chcesz automatycznie wysłać nagranie po nagraniu, odkomentuj w onstop funkcji mediaRecorder
+
+    // Informacja dla backendu:
+    // - Przeglądarki zwykle nagrywają w formacie webm/ogg. Jeśli potrzebujesz MP3, skonwertuj na backendzie (ffmpeg).
+    // - Endpoint /api/ask powinien zwracać JSON { transcript: string, answer: string }
+
+  </script>
+</body>
+</html>
