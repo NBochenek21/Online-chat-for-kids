@@ -1,1 +1,18 @@
+# Biblioteka do Gemini LLM
+google-generativeai>=0.1.6
+
+# Wczytywanie zmiennych środowiskowych z .env
+python-dotenv>=1.0.0
+
+# Transkrypcja audio (Whisper) i obsługa audio
+whisper @ git+https://github.com/openai/whisper.git
+torch>=2.0.0  # wymagane dla Whisper, dobierz wersję zgodnie z CPU/GPU
+
+# Opcjonalnie, jeśli chcesz konwersję TTS
+gtts>=2.3.2
+
+# Dodatkowe biblioteki pomocnicze
+pathlib>=1.0.1
+
+
 Flask
