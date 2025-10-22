@@ -1,8 +1,11 @@
 import google.generativeai as genai
+from dotenv import load_dotenv
+import os
+from openai import OpenAI
 
-# Skonfiguruj klucz API (np. przez zmienną środowiskową)
-# export GOOGLE_API_KEY="twoj_klucz_api"
-genai.configure(api_key="SECRET_KEY")
+load_dotenv()
+api_key = os.getenv("GOOGLE_API_KEY")
+genai.configure(api_key=api_key)
 
 
 def call_llm(question: str) -> str:
@@ -18,14 +21,13 @@ def call_llm(question: str) -> str:
         "You are a friendly and safe assistant for kids aged 6–12. "
         "Answer simply, kindly, and factually. "
         "Avoid any adult, violent, political, or sensitive content. "
-        "If a question is not appropriate for kids or cannot be answered safely, "
-        "respond with: 'I'm sorry, I can't talk about that topic.' "
-        "Never generate or forward inappropriate text to any external system."
+        "You must anwer questions related to animals, fairytales and colours. "
+        "If a question is related to other topic reply: I cant't answer that question. Ask me anything about animals, fairytales or colours.  "
     )
 
     try:
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
+            model_name="gemini-2.0-flash",
             system_instruction=system_prompt
         )
 
@@ -36,3 +38,6 @@ def call_llm(question: str) -> str:
     except Exception as e:
         # Prosty fallback na wypadek błędu API
         return f"Error occurred while generating answer: {str(e)}"
+    
+
+print(call_llm("What is the biggest animal?")) 
