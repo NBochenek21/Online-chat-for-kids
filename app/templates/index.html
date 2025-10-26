@@ -406,8 +406,6 @@ const button = document.getElementById('recordBtn');
       return new Promise(resolve => {
         mediaRecorder.onstop = async () => {
           const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-          // Konwersja na mp3 z użyciem ffmpeg.js wymaga dodatkowej biblioteki, 
-          // tutaj wyślemy WebM i backend może przekonwertować do mp3
           resolve(audioBlob);
         };
         mediaRecorder.stop();
