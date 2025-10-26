@@ -415,21 +415,56 @@ const button = document.getElementById('recordBtn');
     async function sendAudio(audioBlob) {
       const formData = new FormData();
       formData.append('file', audioBlob, 'question.webm');
+      try {
+        const response = await fetch('/upload', {
+          method: 'POST',
+          body: formData
+        });
 
-      const response = await fetch('/upload', {
-        method: 'POST',
-        body: formData
-      });
+        if (!response.ok) {
+          const err = await response.text();
+          alert('Błąd przy wysyłaniu pliku: ' + err);
+          return;
+        }
 
-      if (!response.ok) {
-        alert('Błąd przy wysyłaniu pliku');
-        return;
+        const contentType = response.headers.get('content-type');
+        let answer = null;
+
+        if (contentType && contentType.includes('audio/mpeg')) {
+          // Server returned MP3 audio; play it
+          const arrayBuffer = await response.arrayBuffer();
+          const audioUrl = URL.createObjectURL(new Blob([arrayBuffer], { type: 'audio/mpeg' }));
+          const audio = new Audio(audioUrl);
+          audio.play().catch(e => {
+            console.error('Audio playback failed', e);
+            alert('Błąd przy odtwarzaniu audio');
+          });
+        } else {
+          // Server returned JSON; use speechSynthesis to speak
+          const data = await response.json();
+          answer = data.answer || data.error;
+          if (!answer) {
+            alert('Brak odpowiedzi od serwera');
+            return;
+          }
+
+          // Use Web Speech API to speak answer (works in most modern browsers)
+          if ('speechSynthesis' in window) {
+            const utter = new SpeechSynthesisUtterance(answer);
+            // Optionally tune voice/pitch/rate for kid-friendly tone
+            utter.rate = 0.95;
+            utter.pitch = 1.1;
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(utter);
+          } else {
+            // Fallback: show alert with the text
+            alert(answer);
+          }
+        }
+      } catch (err) {
+        console.error('Upload error', err);
+        alert('Błąd sieci podczas wysyłania pliku');
       }
-
-      const arrayBuffer = await response.arrayBuffer();
-      const audioUrl = URL.createObjectURL(new Blob([arrayBuffer], { type: 'audio/mp3' }));
-      const audio = new Audio(audioUrl);
-      audio.play();
     }
 
     button.addEventListener('click', async () => {

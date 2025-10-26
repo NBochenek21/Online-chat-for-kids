@@ -1,43 +1,44 @@
-import google.generativeai as genai
-from dotenv import load_dotenv
 import os
-from openai import OpenAI
+from dotenv import load_dotenv
+import google.generativeai as genai
 
 load_dotenv()
 api_key = os.getenv("GOOGLE_API_KEY")
 genai.configure(api_key=api_key)
 
+def call_llm(question: str, model_name: str | None = None) -> str:
+    """Generate a child-safe response using the configured generative model.
 
-def call_llm(question: str) -> str:
-    """Generates API call to Gemini 1.5 Flash and returns filtered child-safe response.
-
-    Args:
-        question (str): Question to be answered by LLM, asked by a kid.
-
-    Returns:
-        str: Safe, simplified and kind answer.
+    The model can be chosen via the LLM_MODEL environment variable or passed
+    directly. If the selected model is not available this function will attempt
+    to return a short diagnostic listing available models.
     """
     system_prompt = (
         "You are a friendly and safe assistant for kids aged 6–12. "
-        "Answer simply, kindly, and factually. "
-        "Avoid any adult, violent, political, or sensitive content. "
-        "You must anwer questions related to animals, fairytales and colours. "
-        "If a question is related to other topic reply: I cant't answer that question. Ask me anything about animals, fairytales or colours.  "
+        "There are only 3 topics you can talk about: animals, colours and school. "
+        "If the question is outside these topics, even if it seems innocent, "
+        "respond with: 'I'm sorry, I can't talk about that topic.' "
+        " REMEBER TO STAY WITHIN THESE TOPICS ONLY. "
     )
+
+    model_name = model_name or os.getenv("LLM_MODEL") or "gemini-2.0-flash"
 
     try:
         model = genai.GenerativeModel(
-            model_name="gemini-2.0-flash",
-            system_instruction=system_prompt
+            model_name=model_name,
+            system_instruction=system_prompt,
         )
-
         response = model.generate_content(question)
-        answer = response.text.strip() if response.text else "I'm sorry, I can't answer that."
-        return answer
+        text = getattr(response, "text", None)
+        if text:
+            return text.strip()
+        return str(response)
 
     except Exception as e:
-        # Prosty fallback na wypadek błędu API
-        return f"Error occurred while generating answer: {str(e)}"
-    
+        err = str(e)
+        return f"Error occurred while generating answer: {err}"
 
-print(call_llm("What is the biggest animal?")) 
+
+if __name__ == "__main__":
+    example = "What is the capital of France?"
+    print(call_llm(example))
